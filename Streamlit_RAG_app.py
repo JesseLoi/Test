@@ -15,7 +15,7 @@ INDEX_NAME = st.secrets["INDEX_NAME"]
 
 # init
 genai.configure(api_key=GOOGLE_API_KEY)
-pc = Pinecone(api_key=PINECONE_API_KEY)
+pc = pinecone(api_key=PINECONE_API_KEY)
 index = pc.Index(INDEX_NAME)
 model = SentenceTransformer("all-MiniLM-L6-v2")
 
