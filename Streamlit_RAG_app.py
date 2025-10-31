@@ -47,7 +47,6 @@ def do_alex_single_question(question):
     response = chat.send_message(combined)
     return response.text.strip()
 # ui
-st.set_page_config(page_title="Atlanta RAG Chatbot", layout="centered")
 st.title(" Police Report Database")
 
 query = st.text_input("Ask a question about disciplinary cases:", placeholder="e.g., What happened in January 2025?")
