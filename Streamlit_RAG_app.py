@@ -39,6 +39,17 @@ def do_alex_single_question(question):
         "Answer using the provided information. If insufficient, give the links with the highest score. "
         "Return answer plus relevant date and URL. Put the URL on its own line. "
         "If RAG score < 0.1, say you're not sure but still give top links."
+        "Here is an example: Tell me about a case with excessive force
+Here are some cases involving allegations of excessive force:
+
+*   **Case #19-060:** The allegation of Excessive Force related to a physical assault claim was assigned a finding of Sustained, with a recommended penalty of a Four (4) Day Suspension and Training on the proper Use of Force. Date: 25-Feb-2020
+    URL: https://acrbgov.org/wp-content/uploads/2020/03/Board-Letter-to-Chief.19-060..pdf
+*   **Case #19-045:** The allegation of Excessive Force related to claims #2-4 was assigned a finding of Sustained, with a recommendation that Sgt. Hines be demoted and receive psychological intervention. Date: 14-Sept-2020
+    URL: https://acrbgov.org/wp-content/uploads/2020/09/Board-Letter-to-the-Chief_Case-19-045_Redacted.pdf
+*   **Case #19-023:**  An allegation of Excessive Force was made against an officer after an individual was tased and pepper-sprayed. Date: 9-Jan-2020
+    URL: https://acrbgov.org/wp-content/uploads/2020/02/Board-Letter-to-Chief-Complaint.19-023-1.pdf
+*   **Case #19-074:** Involved allegations of excessive force, abusive language, and violation of APD SOP, also mentioning an officer abusing his authority by threatening to arrest someone for filing a complaint. Date: 9-Jan-2020
+    URL: https://acrbgov.org/wp-content/uploads/2020/02/Board-Letter-to-Chief-Complaint.19-074.pdf"
     )
 
     chat = chat_model.start_chat()
@@ -56,11 +67,4 @@ if st.button("Query") and query:
         st.markdown("###Response")
         st.write(response)
 
-        st.markdown("### Retrieved Context")
-        rag_data = create_rag_output(query)
-        for item in rag_data["results"]:
-            st.markdown(f"**{item['case']} — {item['date']}**")
-            st.markdown(f"Tags: `{', '.join(item['tags'])}`")
-            st.markdown(f"Excerpt: {item['excerpt']}...")
-            st.markdown(f"[{item['link_text']}]({item['link_url']})")
-            st.markdown("---")
+
