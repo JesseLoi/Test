@@ -35,7 +35,7 @@ chat_model = get_chat_model()
 
 def do_alex_single_question(question):
     system_prompt = ("""
-        "You will receive a question. Please use the JSON objects you are handed. "
+        "You will receive a question or some keywords or names of officers. Please use the JSON objects you are handed to tell the user about the keywords. The JSON items are usually snippets, some from the same article "
         "Answer using the provided information. If insufficient, give the links with the highest score. "
         "Return answer plus relevant date and URL. Put the URL on its own line. "
         "If RAG score < 0.1, say you're not sure but still give top links. Be verbose."
