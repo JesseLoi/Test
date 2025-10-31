@@ -25,19 +25,26 @@ def create_rag_output(question):
   res3 = index.query(vector=q_vec2, top_k=30, include_metadata=True, include_values=False)
   return res3["matches"]
 #Question function
-def do_alex_single_question(question: str):
-    rag_context = create_rag_output(question)
-    system_prompt = """
-    You will receive a question. Please use all the JSON objects you are handed. 
-  You will answer questions using the information you are handed. If you do not have sufficient information, give the links with the highest score
-  Give your response in the form of an answer plus the relevant date and URL of the relevant article from the RAG output. Have the url as a seperate new line by itself
-  IF your RAG score: is low (like lower than 0.1), then say that you are not sure about the question but still give the links with highest scores.
-    """
-    chat_model = genai.GenerativeModel('gemini-2.0-flash-exp', system_instruction=system_prompt)
-    chat = chat_model.start_chat()
-    response = chat.send_message(question)
-    return response.text.strip()
 
+@st.cache_resource
+def get_chat_model():
+    return genai.GenerativeModel("gemini-2.0-flash-exp")
+
+chat_model = get_chat_model()
+
+def do_alex_single_question(question):
+    system_prompt = (
+        "You will receive a question. Please use the JSON objects you are handed. "
+        "Answer using the provided information. If insufficient, give the links with the highest score. "
+        "Return answer plus relevant date and URL. Put the URL on its own line. "
+        "If RAG score < 0.1, say you're not sure but still give top links."
+    )
+
+    chat = chat_model.start_chat()
+    rag_context=create_rag_output(question)
+    combined = f"SYSTEM INSTRUCTION:\n{system_prompt}\n\nQUESTION:\n{question}\n\nRAG OUTPUT \n\n{rag_context}"
+    response = chat.send_message(combined)
+    return response.text.strip()
 # ui
 st.set_page_config(page_title="Atlanta RAG Chatbot", layout="centered")
 st.title(" Police Report Database")
