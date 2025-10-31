@@ -1,4 +1,5 @@
 import streamlit as st
+st.set_page_config(page_title="Atlanta RAG Chatbot", layout="centered")
 import google.generativeai as genai
 from sentence_transformers import SentenceTransformer
 from pinecone import Pinecone
