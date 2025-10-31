@@ -23,7 +23,7 @@ model = SentenceTransformer("all-MiniLM-L6-v2")
 # reag query-er
 def create_rag_output(question):
   q_vec2 = model.encode(question, convert_to_numpy=True).tolist()
-  res3 = index.query(vector=q_vec2, top_k=30, include_metadata=True, include_values=False)
+  res3 = index.query(vector=q_vec2, top_k=40, include_metadata=True, include_values=False)
   return res3["matches"]
 #Question function
 
@@ -38,7 +38,7 @@ def do_alex_single_question(question):
         "You will receive a question. Please use the JSON objects you are handed. "
         "Answer using the provided information. If insufficient, give the links with the highest score. "
         "Return answer plus relevant date and URL. Put the URL on its own line. "
-        "If RAG score < 0.1, say you're not sure but still give top links."
+        "If RAG score < 0.1, say you're not sure but still give top links. Be verbose."
         "Here is an example:
 Here are some cases involving allegations of excessive force:
 
