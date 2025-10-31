@@ -34,12 +34,12 @@ def get_chat_model():
 chat_model = get_chat_model()
 
 def do_alex_single_question(question):
-    system_prompt = (
+    system_prompt = ("""
         "You will receive a question. Please use the JSON objects you are handed. "
         "Answer using the provided information. If insufficient, give the links with the highest score. "
         "Return answer plus relevant date and URL. Put the URL on its own line. "
         "If RAG score < 0.1, say you're not sure but still give top links."
-        "Here is an example: Tell me about a case with excessive force
+        "Here is an example:
 Here are some cases involving allegations of excessive force:
 
 *   **Case #19-060:** The allegation of Excessive Force related to a physical assault claim was assigned a finding of Sustained, with a recommended penalty of a Four (4) Day Suspension and Training on the proper Use of Force. Date: 25-Feb-2020
@@ -50,7 +50,7 @@ Here are some cases involving allegations of excessive force:
     URL: https://acrbgov.org/wp-content/uploads/2020/02/Board-Letter-to-Chief-Complaint.19-023-1.pdf
 *   **Case #19-074:** Involved allegations of excessive force, abusive language, and violation of APD SOP, also mentioning an officer abusing his authority by threatening to arrest someone for filing a complaint. Date: 9-Jan-2020
     URL: https://acrbgov.org/wp-content/uploads/2020/02/Board-Letter-to-Chief-Complaint.19-074.pdf"
-    )
+    """)
 
     chat = chat_model.start_chat()
     rag_context=create_rag_output(question)
