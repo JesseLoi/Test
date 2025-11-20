@@ -1,10 +1,10 @@
 import streamlit as st
 import requests
 
-# Replace with your actual Ngrok URL
-OLLAMA_URL = "https://charis-oesophageal-edmundo.ngrok-free.dev/api/generate"
 
-st.title("🧠 Ask Ollama (via Ngrok)")
+OLLAMA_URL = "http://charis-oesophageal-edmundo.ngrok-free.dev/api/generate"
+
+st.title("Ask Ollama (via Ngrok)")
 prompt = st.text_area("Enter your prompt:", height=150)
 
 if st.button("Send"):
@@ -18,9 +18,10 @@ if st.button("Send"):
                     "prompt": prompt,
                     "stream": False
                 }
-                response = requests.post(OLLAMA_URL, json=payload, timeout=1000)
+                response = requests.post(OLLAMA_URL, json=payload, verify=False, timeout=1000)
                 response.raise_for_status()
                 st.success("Response:")
                 st.write(response.json()["response"])
             except Exception as e:
+
                 st.error(f"Error: {e}")
