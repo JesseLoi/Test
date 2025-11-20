@@ -25,13 +25,14 @@ def create_rag_output(question):
 
 # Ollama call
 def call_ollama(prompt):
+    print(f"Prompt length: {len(prompt)} characters")
     payload = {
         "model": "llama3:8b",
         "prompt": prompt,
         "stream": False
     }
     try:
-        response = requests.post(OLLAMA_URL, json=payload, timeout=1000)
+        response = requests.post(OLLAMA_URL, json=payload, verify=False, timeout=1000)
         response.raise_for_status()
         return response.json()["response"].strip()
     except Exception as e:
@@ -62,5 +63,6 @@ if st.button("Query") and query:
         response = do_alex_single_question(query)
         st.markdown("### Response")
         st.write(response)
+
 
 
