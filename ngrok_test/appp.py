@@ -20,7 +20,7 @@ model = SentenceTransformer("all-MiniLM-L6-v2")
 # RAG query (top 2 only)
 def create_rag_output(question):
     q_vec2 = model.encode(question, convert_to_numpy=True).tolist()
-    res3 = index.query(vector=q_vec2, top_k=2, include_metadata=True, include_values=False)
+    res3 = index.query(vector=q_vec2, top_k=1, include_metadata=True, include_values=False)
     return res3["matches"]
 
 # Ollama call
@@ -31,7 +31,7 @@ def call_ollama(prompt):
         "stream": False
     }
     try:
-        response = requests.post(OLLAMA_URL, json=payload, timeout=120)
+        response = requests.post(OLLAMA_URL, json=payload, timeout=1000)
         response.raise_for_status()
         return response.json()["response"].strip()
     except Exception as e:
@@ -62,4 +62,5 @@ if st.button("Query") and query:
         response = do_alex_single_question(query)
         st.markdown("### Response")
         st.write(response)
+
 
