@@ -23,6 +23,7 @@ def create_rag_output(question):
     res3 = index.query(vector=q_vec2, top_k=1, include_metadata=True, include_values=False)
     return res3["matches"]
 
+
 # Ollama call
 def call_ollama(prompt):
     print(f"Prompt length: {len(prompt)} characters")
@@ -38,17 +39,15 @@ def call_ollama(prompt):
     except Exception as e:
         return f"Error calling Ollama: {e}"
 
+
 # Main query function
 def do_alex_single_question(question):
     system_prompt = (
-        "You will receive a question or some keywords or names of officers. Please use the JSON objects you are handed to tell the user about the keywords. "
-        "The JSON items are usually snippets, some from the same article. Answer using the provided information. If insufficient, give the links with the highest score. "
-        "Return answer plus relevant date and URL. Put the URL on its own line. Keep it short and simple.\n\n"
+        "Use the JSON objects to tell the user about the keywords. "
+        "Keep it short and simple.\n\n"
         "Here is an example:\n"
         "* **Case #19-060:** Excessive Force, 4-day suspension. Date: 25-Feb-2020\n"
         "  URL: https://acrbgov.org/wp-content/uploads/2020/03/Board-Letter-to-Chief.19-060..pdf\n"
-        "* **Case #19-045:** Excessive Force, demotion and psychological intervention. Date: 14-Sept-2020\n"
-        "  URL: https://acrbgov.org/wp-content/uploads/2020/09/Board-Letter-to-the-Chief_Case-19-045_Redacted.pdf"
     )
 
     rag_context = create_rag_output(question)
@@ -63,6 +62,7 @@ if st.button("Query") and query:
         response = do_alex_single_question(query)
         st.markdown("### Response")
         st.write(response)
+
 
 
 
