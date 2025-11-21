@@ -20,7 +20,7 @@ model = SentenceTransformer("all-MiniLM-L6-v2")
 # RAG query (top 2 only)
 def create_rag_output(question):
     q_vec2 = model.encode(question, convert_to_numpy=True).tolist()
-    res3 = index.query(vector=q_vec2, top_k=1, include_metadata=True, include_values=False)
+    res3 = index.query(vector=q_vec2, top_k=10, include_metadata=True, include_values=False)
     return res3["matches"]
 
 
@@ -43,8 +43,8 @@ def call_ollama(prompt):
 # Main query function
 def do_alex_single_question(question):
     system_prompt = (
-        "Use the JSON objects to tell the user about the keywords. "
-        "Keep it short and simple.\n\n"
+        "Use the JSON objects to tell the user about the keywords. Tell them about the context and how that relates to the query. Please give the date, relevant tags, and url of the incidents "
+        "Keep it concise.\n\n"
         "Here is an example:\n"
         "* **Case #19-060:** Excessive Force, 4-day suspension. Date: 25-Feb-2020\n"
         "  URL: https://acrbgov.org/wp-content/uploads/2020/03/Board-Letter-to-Chief.19-060..pdf\n"
@@ -62,6 +62,7 @@ if st.button("Query") and query:
         response = do_alex_single_question(query)
         st.markdown("### Response")
         st.write(response)
+
 
 
 
