@@ -35,7 +35,7 @@ def clean_metadata(md):
 # Ollama call
 def call_ollama(prompt):
     payload = {
-        "model": "mistral:latest",
+        "model": "llama3.1:70b",
         #you can use whatever model you want. We will probably change this to ollama3.1:70b for fun
         "prompt": prompt,
         "stream": True #there is a pretty important reason we're using streaming as opposed to not. Cloudflare closes its connection if you spend more than 100 seconds without input
@@ -104,6 +104,7 @@ if st.button("Query") and query:
         response = do_alex_single_question(query)
         st.markdown("### Response")
         st.write(response)
+
 
 
 
