@@ -27,7 +27,7 @@ def create_rag_output(question):
 # Ollama call
 def call_ollama(prompt):
     payload = {
-        "model": "mistral:latest"
+        "model": "mistral:latest",
         "prompt": prompt,
         "stream": True
     }
@@ -66,6 +66,7 @@ if st.button("Query") and query:
         response = do_alex_single_question(query)
         st.markdown("### Response")
         st.write(response)
+
 
 
 
