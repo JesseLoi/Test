@@ -32,12 +32,11 @@ def clean_metadata(md):
 
 
 # Ollama call
-# Ollama call (streaming)
 def call_ollama(prompt):
     payload = {
         "model": "mistral:latest",
         "prompt": prompt,
-        "stream": True  # enable streaming
+        "stream": True
     }
 
     session = requests.Session()
@@ -59,14 +58,15 @@ def call_ollama(prompt):
         response.raise_for_status()
 
         full_text = ""
+        output_container = st.empty()  # placeholder for live output
         for line in response.iter_lines():
             if line:
                 import json
                 chunk = json.loads(line.decode("utf-8"))
-                # Append the text chunk
-                full_text += chunk.get("response", "")
-                # Optionally, display in Streamlit as it comes
-                st.write(chunk.get("response", ""), end="")  # live streaming
+                text_chunk = chunk.get("response", "")
+                full_text += text_chunk
+                # update the container with the accumulated text
+                output_container.markdown(full_text)
                 if chunk.get("done", False):
                     break
 
@@ -74,6 +74,7 @@ def call_ollama(prompt):
 
     except Exception as e:
         return f"Error calling Ollama: {e}"
+
 
 
 # Main query function
@@ -99,6 +100,7 @@ if st.button("Query") and query:
         response = do_alex_single_question(query)
         st.markdown("### Response")
         st.write(response)
+
 
 
 
