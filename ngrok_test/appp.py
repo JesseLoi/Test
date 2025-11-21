@@ -46,7 +46,7 @@ def call_ollama(prompt):
         status_forcelist=[500, 502, 503, 504]
     )
     adapter = HTTPAdapter(max_retries=retries)
-    session.mount("http://", adapter)
+    session.mount("https://", adapter)
 
     try:
         response = session.post(
@@ -82,6 +82,7 @@ if st.button("Query") and query:
         response = do_alex_single_question(query)
         st.markdown("### Response")
         st.write(response)
+
 
 
 
