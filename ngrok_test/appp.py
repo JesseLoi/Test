@@ -23,27 +23,40 @@ def create_rag_output(question):
     res3 = index.query(vector=q_vec2, top_k=1, include_metadata=True, include_values=False)
     return res3["matches"]
 
+def clean_metadata(md):
+    text = str(md)
+    return text[:200]  # keep at most 500 chars
+#formatted_rag = "\n".join([clean_metadata(entry["metadata"]) for entry in rag_context])
+
 
 # Ollama call
 def call_ollama(prompt):
     payload = {
-        "model": "mistral:latest",  # or "llama3:8b"
+        "model": "mistral:latest",
         "prompt": prompt,
-        "stream": True
+        "stream": False  # IMPORTANT: no streaming over ngrok TCP
     }
+
+    session = requests.Session()
+    retries = Retry(
+        total=5,
+        backoff_factor=0.5,
+        status_forcelist=[500, 502, 503, 504]
+    )
+    adapter = HTTPAdapter(max_retries=retries)
+    session.mount("http://", adapter)
+
     try:
-        response = requests.post(OLLAMA_URL, json=payload, stream=True, timeout=1000)
-        full_text = ""
-        for line in response.iter_lines():
-            if line:
-                import json
-                chunk = json.loads(line.decode("utf-8"))
-                full_text += chunk.get("response", "")
-                if chunk.get("done", False):
-                    break
-        return full_text.strip()
+        response = session.post(
+            OLLAMA_URL, 
+            json=payload, 
+            timeout=200  # longer for LLM
+        )
+        response.raise_for_status()
+        return response.json().get("response", "").strip()
     except Exception as e:
         return f"Error calling Ollama: {e}"
+
 # Main query function
 def do_alex_single_question(question):
     system_prompt = (
@@ -55,7 +68,8 @@ def do_alex_single_question(question):
     )
 
     rag_context = create_rag_output(question)
-    formatted_rag = "\n".join([str(entry["metadata"]) for entry in rag_context])
+    formatted_rag = "\n".join([clean_metadata(entry["metadata"]) for entry in rag_context])
+    #formatted_rag = "\n".join([str(entry["metadata"]) for entry in rag_context])
     combined_prompt = f"SYSTEM INSTRUCTION:\n{system_prompt}\n\nQUESTION:\n{question}\n\nRAG OUTPUT:\n{formatted_rag}"
     return call_ollama(combined_prompt)
 
@@ -66,6 +80,7 @@ if st.button("Query") and query:
         response = do_alex_single_question(query)
         st.markdown("### Response")
         st.write(response)
+
 
 
 
