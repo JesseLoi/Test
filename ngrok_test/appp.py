@@ -2,6 +2,8 @@ import streamlit as st
 import requests
 from sentence_transformers import SentenceTransformer
 from pinecone import Pinecone
+from urllib3.util.retry import Retry
+from requests.adapters import HTTPAdapter
 
 # UI setup
 st.set_page_config(page_title="Atlanta RAG Chatbot", layout="centered")
@@ -80,6 +82,7 @@ if st.button("Query") and query:
         response = do_alex_single_question(query)
         st.markdown("### Response")
         st.write(response)
+
 
 
 
