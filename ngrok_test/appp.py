@@ -20,7 +20,7 @@ model = SentenceTransformer("all-MiniLM-L6-v2")
 # RAG query (top 2 only)
 def create_rag_output(question):
     q_vec2 = model.encode(question, convert_to_numpy=True).tolist()
-    res3 = index.query(vector=q_vec2, top_k=10, include_metadata=True, include_values=False)
+    res3 = index.query(vector=q_vec2, top_k=5, include_metadata=True, include_values=False)
     return res3["matches"]
 
 
@@ -28,18 +28,24 @@ def create_rag_output(question):
 def call_ollama(prompt):
     print(f"Prompt length: {len(prompt)} characters")
     payload = {
-        "model": "llama3:8b",
+        "model": "mistral:latest",
         "prompt": prompt,
-        "stream": False
+        "stream": True  # force streaming mode
     }
     try:
-        response = requests.post(OLLAMA_URL, json=payload, verify=False, timeout=1000)
-        response.raise_for_status()
-        return response.json()["response"].strip()
+        response = requests.post(OLLAMA_URL, json=payload, stream=True, timeout=1000)
+        full_text = ""
+        for line in response.iter_lines():
+            if line:
+                data = line.decode("utf-8")
+                import json
+                chunk = json.loads(data)
+                full_text += chunk.get("response", "")
+                if chunk.get("done", False):
+                    break
+        return full_text.strip()
     except Exception as e:
         return f"Error calling Ollama: {e}"
-
-
 # Main query function
 def do_alex_single_question(question):
     system_prompt = (
@@ -62,6 +68,7 @@ if st.button("Query") and query:
         response = do_alex_single_question(query)
         st.markdown("### Response")
         st.write(response)
+
 
 
 
