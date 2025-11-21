@@ -52,7 +52,7 @@ def call_ollama(prompt):
         response = session.post(
             OLLAMA_URL, 
             json=payload, 
-            timeout=200  # longer for LLM
+            timeout=1000  # longer for LLM
         )
         response.raise_for_status()
         return response.json().get("response", "").strip()
@@ -82,6 +82,7 @@ if st.button("Query") and query:
         response = do_alex_single_question(query)
         st.markdown("### Response")
         st.write(response)
+
 
 
 
