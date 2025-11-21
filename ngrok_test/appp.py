@@ -32,11 +32,12 @@ def clean_metadata(md):
 
 
 # Ollama call
+# Ollama call (streaming)
 def call_ollama(prompt):
     payload = {
         "model": "mistral:latest",
         "prompt": prompt,
-        "stream": False  # IMPORTANT: no streaming over ngrok TCP
+        "stream": True  # enable streaming
     }
 
     session = requests.Session()
@@ -52,12 +53,28 @@ def call_ollama(prompt):
         response = session.post(
             OLLAMA_URL, 
             json=payload, 
-            timeout=1000  # longer for LLM
+            stream=True,  # stream mode
+            timeout=1000
         )
         response.raise_for_status()
-        return response.json().get("response", "").strip()
+
+        full_text = ""
+        for line in response.iter_lines():
+            if line:
+                import json
+                chunk = json.loads(line.decode("utf-8"))
+                # Append the text chunk
+                full_text += chunk.get("response", "")
+                # Optionally, display in Streamlit as it comes
+                st.write(chunk.get("response", ""), end="")  # live streaming
+                if chunk.get("done", False):
+                    break
+
+        return full_text.strip()
+
     except Exception as e:
         return f"Error calling Ollama: {e}"
+
 
 # Main query function
 def do_alex_single_question(question):
@@ -82,6 +99,7 @@ if st.button("Query") and query:
         response = do_alex_single_question(query)
         st.markdown("### Response")
         st.write(response)
+
 
 
 
