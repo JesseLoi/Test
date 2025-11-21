@@ -26,20 +26,18 @@ def create_rag_output(question):
 
 # Ollama call
 def call_ollama(prompt):
-    print(f"Prompt length: {len(prompt)} characters")
     payload = {
-        "model": "mistral:latest",
+        "model": "mistral:latest"
         "prompt": prompt,
-        "stream": True  # force streaming mode
+        "stream": True
     }
     try:
         response = requests.post(OLLAMA_URL, json=payload, stream=True, timeout=1000)
         full_text = ""
         for line in response.iter_lines():
             if line:
-                data = line.decode("utf-8")
                 import json
-                chunk = json.loads(data)
+                chunk = json.loads(line.decode("utf-8"))
                 full_text += chunk.get("response", "")
                 if chunk.get("done", False):
                     break
@@ -68,6 +66,7 @@ if st.button("Query") and query:
         response = do_alex_single_question(query)
         st.markdown("### Response")
         st.write(response)
+
 
 
 
