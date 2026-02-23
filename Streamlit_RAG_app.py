@@ -30,45 +30,33 @@ def create_rag_output(question):
 @st.cache_resource
 def get_chat_model():
     return genai.GenerativeModel("gemini-2.0-flash-exp")
-system_prompt = """
-You will receive a question and a set of JSON objects representing police disciplinary cases.
-Use ONLY the provided information to answer.
-If information is insufficient, return the top links with the highest RAG scores.
-Return the answer plus relevant dates and URLs, with each URL on its own line.
-If RAG score < 0.1, say you are not sure but still give the top links.
-Be verbose and structured.
-"""
 
+chat_model = get_chat_model()
 
-#chat_model = get_chat_model()
-chat_model = genai.GenerativeModel(
-    "gemini-2.0-flash-exp",
-    system_instruction=system_prompt
-)
 def do_alex_single_question(question):
-    rag_matches = create_rag_output(question)
+    system_prompt = ("""
+        "You will receive a question or some keywords or names of officers. Please use the JSON objects you are handed to tell the user about the keywords. The JSON items are usually snippets, some from the same article "
+        "Answer using the provided information. If insufficient, give the links with the highest score. "
+        "Return answer plus relevant date and URL. Put the URL on its own line. "
+        "If RAG score < 0.1, say you're not sure but still give top links. Be verbose."
+        "Here is an example:
+Here are some cases involving allegations of excessive force:
 
-    # Format RAG context into readable text
-    formatted_context = "\n".join(
-        f"- Case: {m['metadata'].get('case')}\n"
-        f"  Date: {m['metadata'].get('date')}\n"
-        f"  Excerpt: {m['metadata'].get('excerpt')}\n"
-        f"  URL: {m['metadata'].get('link_url')}\n"
-        f"  Score: {m.get('score')}\n"
-        for m in rag_matches
-    )
+*   **Case #19-060:** The allegation of Excessive Force related to a physical assault claim was assigned a finding of Sustained, with a recommended penalty of a Four (4) Day Suspension and Training on the proper Use of Force. Date: 25-Feb-2020
+    URL: https://acrbgov.org/wp-content/uploads/2020/03/Board-Letter-to-Chief.19-060..pdf
+*   **Case #19-045:** The allegation of Excessive Force related to claims #2-4 was assigned a finding of Sustained, with a recommendation that Sgt. Hines be demoted and receive psychological intervention. Date: 14-Sept-2020
+    URL: https://acrbgov.org/wp-content/uploads/2020/09/Board-Letter-to-the-Chief_Case-19-045_Redacted.pdf
+*   **Case #19-023:**  An allegation of Excessive Force was made against an officer after an individual was tased and pepper-sprayed. Date: 9-Jan-2020
+    URL: https://acrbgov.org/wp-content/uploads/2020/02/Board-Letter-to-Chief-Complaint.19-023-1.pdf
+*   **Case #19-074:** Involved allegations of excessive force, abusive language, and violation of APD SOP, also mentioning an officer abusing his authority by threatening to arrest someone for filing a complaint. Date: 9-Jan-2020
+    URL: https://acrbgov.org/wp-content/uploads/2020/02/Board-Letter-to-Chief-Complaint.19-074.pdf"
+    """)
 
-    prompt = f"""
-QUESTION:
-{question}
-
-RAG CONTEXT:
-{formatted_context}
-"""
-
-    response = chat_model.generate_content(prompt)
+    chat = chat_model.start_chat()
+    rag_context=create_rag_output(question)
+    combined = f"SYSTEM INSTRUCTION:\n{system_prompt}\n\nQUESTION:\n{question}\n\nRAG OUTPUT \n\n{rag_context}"
+    response = chat.send_message(combined)
     return response.text.strip()
-
 # ui
 st.title(" Police Report Database")
 
@@ -78,5 +66,3 @@ if st.button("Query") and query:
         response = do_alex_single_question(query)
         st.markdown("###Response")
         st.write(response)
-
-
