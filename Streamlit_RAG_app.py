@@ -1,68 +1,80 @@
 import streamlit as st
-st.set_page_config(page_title="Atlanta RAG Chatbot", layout="centered")
 import google.generativeai as genai
 from sentence_transformers import SentenceTransformer
 from pinecone import Pinecone
-import os
+import time
 
-
-
-#secrets
+# --- CONFIG & SECRETS ---
+st.set_page_config(page_title="Atlanta RAG Chatbot", layout="centered")
 
 GOOGLE_API_KEY = st.secrets["GOOGLE_API_KEY"]
 PINECONE_API_KEY = st.secrets["PINECONE_API_KEY"]
 INDEX_NAME = st.secrets["INDEX_NAME"]
 
-
-# init
-genai.configure(api_key=GOOGLE_API_KEY)
-pc = Pinecone(api_key=PINECONE_API_KEY)
-index = pc.Index(INDEX_NAME)
-model = SentenceTransformer("all-MiniLM-L6-v2")
-
-# reag query-er
-def create_rag_output(question):
-  q_vec2 = model.encode(question, convert_to_numpy=True).tolist()
-  res3 = index.query(vector=q_vec2, top_k=5, include_metadata=True, include_values=False)
-  return res3["matches"]
-#Question function
+# --- INITIALIZATION (CACHED) ---
 
 @st.cache_resource
-def get_chat_model():
-    return genai.GenerativeModel("gemini-2.0-flash-exp")
+def init_models():
+    # Configure Gemini
+    genai.configure(api_key=GOOGLE_API_KEY)
+    # Using the stable 2026 Gemini 2.5 Flash model
+    gemini = genai.GenerativeModel("gemini-2.5-flash")
+    
+    # Init Pinecone
+    pc = Pinecone(api_key=PINECONE_API_KEY)
+    index = pc.Index(INDEX_NAME)
+    
+    # Init Embedding Model
+    embed_model = SentenceTransformer("all-MiniLM-L6-v2")
+    
+    return gemini, index, embed_model
 
-chat_model = get_chat_model()
+chat_model, index, embed_model = init_models()
+
+# --- LOGIC ---
+
+def create_rag_output(question):
+    # Encode question
+    q_vec = embed_model.encode(question, convert_to_numpy=True).tolist()
+    # Query Pinecone
+    res = index.query(vector=q_vec, top_k=5, include_metadata=True)
+    return res["matches"]
 
 def do_alex_single_question(question):
-    system_prompt = ("""
-        "You will receive a question or some keywords or names of officers. Please use the JSON objects you are handed to tell the user about the keywords. The JSON items are usually snippets, some from the same article "
-        "Answer using the provided information. If insufficient, give the links with the highest score. "
-        "Return answer plus relevant date and URL. Put the URL on its own line. "
-        "If RAG score < 0.1, say you're not sure but still give top links. Be verbose."
-        "Here is an example:
-Here are some cases involving allegations of excessive force:
+    # Define system instruction (Ideally passed into the GenerativeModel constructor)
+    system_prompt = (
+        "You are an assistant for the Atlanta Police Report Database. "
+        "Use the provided JSON RAG context to describe keywords/officers. "
+        "Answer using provided info; if insufficient, give top links. "
+        "Format: Answer + Date + URL (URL on its own line). "
+        "If RAG score < 0.1, state uncertainty but provide links. Be verbose."
+    )
 
-*   **Case #19-060:** The allegation of Excessive Force related to a physical assault claim was assigned a finding of Sustained, with a recommended penalty of a Four (4) Day Suspension and Training on the proper Use of Force. Date: 25-Feb-2020
-    URL: https://acrbgov.org/wp-content/uploads/2020/03/Board-Letter-to-Chief.19-060..pdf
-*   **Case #19-045:** The allegation of Excessive Force related to claims #2-4 was assigned a finding of Sustained, with a recommendation that Sgt. Hines be demoted and receive psychological intervention. Date: 14-Sept-2020
-    URL: https://acrbgov.org/wp-content/uploads/2020/09/Board-Letter-to-the-Chief_Case-19-045_Redacted.pdf
-*   **Case #19-023:**  An allegation of Excessive Force was made against an officer after an individual was tased and pepper-sprayed. Date: 9-Jan-2020
-    URL: https://acrbgov.org/wp-content/uploads/2020/02/Board-Letter-to-Chief-Complaint.19-023-1.pdf
-*   **Case #19-074:** Involved allegations of excessive force, abusive language, and violation of APD SOP, also mentioning an officer abusing his authority by threatening to arrest someone for filing a complaint. Date: 9-Jan-2020
-    URL: https://acrbgov.org/wp-content/uploads/2020/02/Board-Letter-to-Chief-Complaint.19-074.pdf"
-    """)
+    rag_context = create_rag_output(question)
+    
+    # Construct the prompt
+    prompt = f"{system_prompt}\n\nCONTEXT FROM DATABASE:\n{rag_context}\n\nUSER QUESTION: {question}"
 
-    chat = chat_model.start_chat()
-    rag_context=create_rag_output(question)
-    combined = f"SYSTEM INSTRUCTION:\n{system_prompt}\n\nQUESTION:\n{question}\n\nRAG OUTPUT \n\n{rag_context}"
-    response = chat.send_message(combined)
-    return response.text.strip()
-# ui
-st.title(" Police Report Database")
+    # Error handling for Rate Limits (429)
+    try:
+        # We use generate_content for single RAG lookups rather than start_chat 
+        # to keep the overhead low on the free tier.
+        response = chat_model.generate_content(prompt)
+        return response.text.strip()
+    except Exception as e:
+        if "429" in str(e):
+            return "⚠️ The system is busy (Rate Limit). Please wait 30 seconds and try again."
+        return f"An error occurred: {e}"
 
-query = st.text_input("Ask a question about disciplinary cases:", placeholder="e.g., What happened in January 2025?")
+# --- UI ---
+st.title("Atlanta Police Report Database")
+st.info("Searching internal disciplinary records and ACRB board letters.")
+
+query = st.text_input("Ask a question about disciplinary cases:", placeholder="e.g., cases involving excessive force in 2024")
+
 if st.button("Query") and query:
-    with st.spinner("Thinking..."):
+    with st.spinner("Analyzing reports..."):
         response = do_alex_single_question(query)
-        st.markdown("###Response")
-        st.write(response)
+        st.markdown("---")
+        st.markdown("### Analysis")
+        st.markdown(response)
