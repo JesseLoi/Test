@@ -4,18 +4,17 @@ from sentence_transformers import SentenceTransformer
 from pinecone import Pinecone
 import time
 
-# --- CONFIG & SECRETS ---
+#setting secrets
 st.set_page_config(page_title="Atlanta RAG Chatbot", layout="centered")
 
 GOOGLE_API_KEY = st.secrets["GOOGLE_API_KEY"]
 PINECONE_API_KEY = st.secrets["PINECONE_API_KEY"]
 INDEX_NAME = st.secrets["INDEX_NAME"]
 
-# --- INITIALIZATION (CACHED) ---
-
+#setting the models
+#This works through API calls, so it is subject to deprecation.
 @st.cache_resource
 def init_models():
-    # Configure Gemini
     genai.configure(api_key=GOOGLE_API_KEY)
     # Using the stable 2026 Gemini 2.5 Flash model
     gemini = genai.GenerativeModel("gemini-2.5-flash")
@@ -31,8 +30,9 @@ def init_models():
 
 chat_model, index, embed_model = init_models()
 
-# --- LOGIC ---
 
+# This function appends the RAG output as context.
+# It encodes the question then sends it to pinecone.
 def create_rag_output(question):
     # Encode question
     q_vec = embed_model.encode(question, convert_to_numpy=True).tolist()
@@ -40,8 +40,9 @@ def create_rag_output(question):
     res = index.query(vector=q_vec, top_k=5, include_metadata=True)
     return res["matches"]
 
+#Adds the prompt to the question
+
 def do_alex_single_question(question):
-    # Define system instruction (Ideally passed into the GenerativeModel constructor)
     system_prompt = (
         "You are an assistant for the Atlanta Police Report Database. "
         "Use the provided JSON RAG context to describe keywords/officers. "
@@ -63,10 +64,10 @@ def do_alex_single_question(question):
         return response.text.strip()
     except Exception as e:
         if "429" in str(e):
-            return "⚠️ The system is busy (Rate Limit). Please wait 30 seconds and try again."
+            return "The system is busy (Rate Limit). Please wait 30 seconds and try again."
         return f"An error occurred: {e}"
 
-# --- UI ---
+#UI for the webpage
 st.title("Atlanta Police Report Database")
 st.info("Searching internal disciplinary records and ACRB board letters.")
 
